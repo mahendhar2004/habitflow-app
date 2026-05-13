@@ -29,6 +29,11 @@ import {
   Sunset,
   Dumbbell,
   Trophy,
+  Cloud,
+  CloudOff,
+  RefreshCw,
+  LogOut,
+  User,
 } from 'lucide-react';
 
 import { Card } from '../components/ui/Card';
@@ -40,6 +45,9 @@ import { TextArea } from '../components/ui/Input';
 import { PageContainer } from '../components/layout/PageContainer';
 import { db } from '../db/database';
 import { today } from '../utils/dates';
+import { useAuth } from '../contexts/AuthContext';
+import { syncAll, pushToSupabase, pullFromSupabase } from '../lib/sync';
+import { useNavigate } from 'react-router-dom';
 import type { MoodLog, SleepLog, WaterLog, JournalEntry } from '../types';
 
 // ---------------------------------------------------------------------------
@@ -75,6 +83,46 @@ const MOOD_ICONS = [
 // ---------------------------------------------------------------------------
 export function SettingsPage() {
   const todayStr = today();
+  const { user, signOut, isConfigured } = useAuth();
+  const navigate = useNavigate();
+  const [syncing, setSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [syncError, setSyncError] = useState('');
+
+  const handleSync = useCallback(async () => {
+    if (!user) return;
+    setSyncing(true);
+    setSyncStatus('idle');
+    const result = await syncAll(user.id);
+    setSyncing(false);
+    if (result.success) {
+      setSyncStatus('success');
+    } else {
+      setSyncStatus('error');
+      setSyncError(result.error || 'Sync failed');
+    }
+    setTimeout(() => setSyncStatus('idle'), 3000);
+  }, [user]);
+
+  const handlePush = useCallback(async () => {
+    if (!user) return;
+    setSyncing(true);
+    const result = await pushToSupabase(user.id);
+    setSyncing(false);
+    if (result.success) setSyncStatus('success');
+    else { setSyncStatus('error'); setSyncError(result.error || 'Push failed'); }
+    setTimeout(() => setSyncStatus('idle'), 3000);
+  }, [user]);
+
+  const handlePull = useCallback(async () => {
+    if (!user) return;
+    setSyncing(true);
+    const result = await pullFromSupabase(user.id);
+    setSyncing(false);
+    if (result.success) setSyncStatus('success');
+    else { setSyncStatus('error'); setSyncError(result.error || 'Pull failed'); }
+    setTimeout(() => setSyncStatus('idle'), 3000);
+  }, [user]);
 
   // --- Expand states for collapsible sections ---
   const [sleepOpen, setSleepOpen] = useState(false);
@@ -343,6 +391,88 @@ export function SettingsPage() {
   return (
     <PageContainer title="Settings" subtitle="Quick logs, preferences & data">
       <div className="space-y-6">
+        {/* ================================================================= */}
+        {/* ACCOUNT & SYNC                                                     */}
+        {/* ================================================================= */}
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <Cloud className="h-4 w-4 text-text-2" />
+            <h2 className="text-base font-semibold text-text">Account & Sync</h2>
+          </div>
+
+          {user ? (
+            <Card className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full bg-red/10 flex items-center justify-center">
+                  <User className="h-5 w-5 text-red" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-text truncate">{user.email}</p>
+                  <p className="text-[11px] text-text-3">Signed in</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <Button variant="secondary" size="sm" onClick={handleSync} disabled={syncing}>
+                  <RefreshCw className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} />
+                  Sync
+                </Button>
+                <Button variant="secondary" size="sm" onClick={handlePush} disabled={syncing}>
+                  <Upload className="h-3.5 w-3.5" />
+                  Push
+                </Button>
+                <Button variant="secondary" size="sm" onClick={handlePull} disabled={syncing}>
+                  <Download className="h-3.5 w-3.5" />
+                  Pull
+                </Button>
+              </div>
+
+              {syncStatus === 'success' && (
+                <p className="text-xs text-green text-center">Synced successfully</p>
+              )}
+              {syncStatus === 'error' && (
+                <p className="text-xs text-red text-center">{syncError}</p>
+              )}
+
+              <Button
+                variant="ghost"
+                size="sm"
+                fullWidth
+                onClick={async () => { await signOut(); }}
+              >
+                <LogOut className="h-4 w-4" />
+                Sign Out
+              </Button>
+            </Card>
+          ) : (
+            <Card>
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-xl bg-surface-2 flex items-center justify-center">
+                  <CloudOff className="h-5 w-5 text-text-3" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-text">Offline Mode</p>
+                  <p className="text-[11px] text-text-3">
+                    {isConfigured ? 'Sign in to sync across devices' : 'Supabase not configured'}
+                  </p>
+                </div>
+              </div>
+              {isConfigured && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  fullWidth
+                  className="mt-3"
+                  onClick={() => navigate('/auth')}
+                >
+                  <User className="h-4 w-4" />
+                  Sign In / Sign Up
+                </Button>
+              )}
+            </Card>
+          )}
+        </section>
+
         {/* ================================================================= */}
         {/* QUICK LIFE LOGGING                                                 */}
         {/* ================================================================= */}
