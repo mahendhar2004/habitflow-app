@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #000000;
+  --color-surface: #1C1C1E;
+  --color-surface-2: #2C2C2E;
+  --color-surface-3: #3A3A3C;
+  --color-red: #FF2D55;
+  --color-red-dim: #991B33;
+  --color-orange: #FF9500;
+  --color-green: #30D158;
+  --color-blue: #0A84FF;
+  --color-yellow: #FFD60A;
+  --color-text: #FFFFFF;
+  --color-text-2: #8E8E93;
+  --color-text-3: #48484A;
+  --color-border: rgba(255, 255, 255, 0.08);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  background: #000000;
+  color: #FFFFFF;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  scrollbar-width: none;
+}
+
+input, textarea, select {
+  font-family: inherit;
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes ring-fill {
+  from { stroke-dashoffset: var(--ring-circumference); }
+  to { stroke-dashoffset: var(--ring-offset); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes breathe-in {
+  from { transform: scale(0.3); opacity: 0.3; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes breathe-out {
+  from { transform: scale(1); opacity: 1; }
+  to { transform: scale(0.3); opacity: 0.3; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out both;
+}
+
+.glow-red {
+  box-shadow: 0 0 20px rgba(255, 45, 85, 0.25), 0 0 60px rgba(255, 45, 85, 0.1);
+}
+
+.glow-red-strong {
+  box-shadow: 0 0 30px rgba(255, 45, 85, 0.4), 0 0 80px rgba(255, 45, 85, 0.15);
+}
+
+.glow-green {
+  box-shadow: 0 0 20px rgba(48, 209, 88, 0.25), 0 0 60px rgba(48, 209, 88, 0.1);
+}
+
+.glow-orange {
+  box-shadow: 0 0 20px rgba(255, 149, 0, 0.25), 0 0 60px rgba(255, 149, 0, 0.1);
+}
+
+.text-glow-red {
+  text-shadow: 0 0 20px rgba(255, 45, 85, 0.7), 0 0 40px rgba(255, 45, 85, 0.3);
+}
+
+.text-glow-green {
+  text-shadow: 0 0 20px rgba(48, 209, 88, 0.7), 0 0 40px rgba(48, 209, 88, 0.3);
+}
+
+.text-glow-orange {
+  text-shadow: 0 0 20px rgba(255, 149, 0, 0.7), 0 0 40px rgba(255, 149, 0, 0.3);
+}
