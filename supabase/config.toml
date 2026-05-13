@@ -1,0 +1,6 @@
+project_id = "habitflow"
+
+[auth]
+enabled = true
+site_url = "https://habitflow-app-eta.vercel.app"
+additional_redirect_urls = ["https://habitflow-app-eta.vercel.app/**"]

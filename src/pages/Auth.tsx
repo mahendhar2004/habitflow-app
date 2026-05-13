@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Activity, Mail, Lock, Eye, EyeOff, LogIn, UserPlus, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/Button';
 
 export function AuthPage() {
+  const navigate = useNavigate();
   const { signIn, signUp, signInWithGoogle } = useAuth();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -27,6 +29,9 @@ export function AuthPage() {
       setError(result.error);
     } else if (mode === 'signup') {
       setSuccess('Check your email to confirm your account.');
+    } else {
+      navigate('/');
+      return;
     }
     setLoading(false);
   }

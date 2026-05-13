@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { v4 as uuid } from 'uuid';
 import {
@@ -34,6 +34,7 @@ import {
   RefreshCw,
   LogOut,
   User,
+  Smartphone,
 } from 'lucide-react';
 
 import { Card } from '../components/ui/Card';
@@ -81,10 +82,52 @@ const MOOD_ICONS = [
 // ---------------------------------------------------------------------------
 // Settings Page
 // ---------------------------------------------------------------------------
+// Store the deferred install prompt globally so it survives re-renders
+let deferredInstallPrompt: BeforeInstallPromptEvent | null = null;
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 export function SettingsPage() {
   const todayStr = today();
   const { user, signOut, isConfigured } = useAuth();
   const navigate = useNavigate();
+  const [canInstall, setCanInstall] = useState(!!deferredInstallPrompt);
+  const [isInstalled, setIsInstalled] = useState(
+    window.matchMedia('(display-mode: standalone)').matches
+  );
+
+  useEffect(() => {
+    function handleBeforeInstall(e: Event) {
+      e.preventDefault();
+      deferredInstallPrompt = e as BeforeInstallPromptEvent;
+      setCanInstall(true);
+    }
+    function handleAppInstalled() {
+      deferredInstallPrompt = null;
+      setCanInstall(false);
+      setIsInstalled(true);
+    }
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    window.addEventListener('appinstalled', handleAppInstalled);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  const handleInstall = useCallback(async () => {
+    if (!deferredInstallPrompt) return;
+    await deferredInstallPrompt.prompt();
+    const { outcome } = await deferredInstallPrompt.userChoice;
+    if (outcome === 'accepted') {
+      deferredInstallPrompt = null;
+      setCanInstall(false);
+      setIsInstalled(true);
+    }
+  }, []);
   const [syncing, setSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [syncError, setSyncError] = useState('');
@@ -915,6 +958,60 @@ export function SettingsPage() {
             )}
           </Card>
         </section>
+
+        {/* ================================================================= */}
+        {/* INSTALL APP                                                        */}
+        {/* ================================================================= */}
+        {!isInstalled && (
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <Smartphone className="h-4 w-4 text-text-2" />
+              <h2 className="text-base font-semibold text-text">Install App</h2>
+            </div>
+            <Card glow="red">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-10 w-10 rounded-xl bg-red/10 flex items-center justify-center">
+                  <Smartphone className="h-5 w-5 text-red" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-text">Install HabitFlow</p>
+                  <p className="text-[11px] text-text-2">
+                    Add to your home screen for a full app experience — no browser bar, works offline
+                  </p>
+                </div>
+              </div>
+              {canInstall ? (
+                <Button fullWidth onClick={handleInstall}>
+                  <Smartphone className="h-4 w-4" />
+                  Install App
+                </Button>
+              ) : (
+                <div className="bg-surface-2 rounded-xl p-3 text-xs text-text-2 space-y-1.5">
+                  <p className="font-medium text-text text-sm">How to install:</p>
+                  <p>1. Open this page in <strong className="text-text">Chrome</strong> on your phone</p>
+                  <p>2. Tap the <strong className="text-text">three-dot menu</strong> (top right)</p>
+                  <p>3. Tap <strong className="text-text">"Install app"</strong> or <strong className="text-text">"Add to Home Screen"</strong></p>
+                </div>
+              )}
+            </Card>
+          </section>
+        )}
+
+        {isInstalled && (
+          <section>
+            <Card>
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-xl bg-green/10 flex items-center justify-center">
+                  <Smartphone className="h-5 w-5 text-green" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-text">App Installed</p>
+                  <p className="text-[11px] text-text-3">Running as standalone app</p>
+                </div>
+              </div>
+            </Card>
+          </section>
+        )}
 
         {/* ================================================================= */}
         {/* ABOUT                                                              */}
